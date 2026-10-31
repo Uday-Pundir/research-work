@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activity Tracker — Personal Goals Dashboard</title>
+  <meta name="description" content="Personal activity tracker — set goals, log activities, track progress stored in Excel."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <div class="brand-icon">🎯</div>
+        <div class="brand-text">
+          <span class="brand-name">GoalTracker</span>
+          <span class="brand-sub">Personal Dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal Profile Snippet -->
+    <div class="sidebar-profile-card" onclick="navigate('profile', document.querySelector('[data-page=profile]'))" title="View About Me">
+      <div class="sp-avatar" id="sidebarAvatar">👨‍💻</div>
+      <div class="sp-info">
+        <span class="sp-name" id="sidebarUserName">Uday Pundir</span>
+        <span class="sp-sub" id="sidebarUserRole">Computer Science</span>
+      </div>
+      <span class="sp-arrow">›</span>
+    </div>
+
+    <div class="today-badge">
+      <span class="today-icon">📅</span>
+      <span id="sidebarDate">Loading...</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="today" onclick="navigate('today', this)">
+        <span class="nav-icon">🏠</span><span>Today</span>
+        <span class="nav-count" id="navTodayCount">0</span>
+      </a>
+      <a class="nav-item" data-page="goals" onclick="navigate('goals', this)">
+        <span class="nav-icon">🎯</span><span>My Goals</span>
+        <span class="nav-count" id="navGoalsCount">0</span>
+      </a>
+      <a class="nav-item" data-page="log" onclick="navigate('log', this)">
+        <span class="nav-icon">➕</span><span>Log Activity</span>
+      </a>
+      <a class="nav-item" data-page="history" onclick="navigate('history', this)">
+        <span class="nav-icon">📜</span><span>History</span>
+      </a>
+      <a class="nav-item" data-page="analytics" onclick="navigate('analytics', this)">
+        <span class="nav-icon">📊</span><span>Analytics</span>
+      </a>
+      <a class="nav-item" data-page="profile" onclick="navigate('profile', this)">
+        <span class="nav-icon">👤</span><span>About Me</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="export-btn" onclick="exportData()">
+        <span>⬇️</span> Export Excel
+      </button>
+      <div class="streak-widget" id="streakWidget">
+        <span class="streak-fire">🔥</span>
+        <div>
+          <p class="streak-num" id="streakNum">0</p>
+          <p class="streak-label">day streak</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="mainContent">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <button class="hamburger" onclick="toggleSidebar()">☰</button>
+        <div>
+          <h1 class="header-title" id="headerTitle">Today's Overview</h1>
+          <p class="header-sub" id="headerSub">Track your daily progress</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+        <button class="icon-btn" onclick="refreshData()" title="Refresh">🔄</button>
+        <button class="icon-btn" onclick="toggleTheme()" title="Theme" id="themeBtn">🌙</button>
+      </div>
+    </header>
+
+    <!-- ═══════════════  TODAY PAGE  ═══════════════ -->
+    <section class="page active" id="page-today">
+      <!-- Summary row -->
+      <div class="summary-strip" id="summaryStrip">
+        <div class="summary-card">
+          <p class="summary-label">Goals Active</p>
+          <h2 class="summary-val" id="sumGoals">0</h2>
+        </div>
+        <div class="summary-card highlight">
+          <p class="summary-label">Done Today</p>
+          <h2 class="summary-val" id="sumDone">0</h2>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Activities Logged</p>
+          <h2 class="summary-val" id="sumActs">0</h2>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Completion Rate</p>
+          <h2 class="summary-val" id="sumRate">0%</h2>
+        </div>
+      </div>
+
+      <!-- Goal progress cards -->
+      <div class="section-header">
+        <h2>Goal Progress — Today</h2>
+        <button class="btn-ghost" onclick="navigate('log', document.querySelector('[data-page=log]'))">+ Log Activity</button>
+      </div>
+
+      <div class="goals-progress-grid" id="todayGoalsGrid">
+        <div class="empty-state-card">
+          <div class="empty-icon">🎯</div>
+          <h3>No goals yet</h3>
+          <p>Create your first goal to start tracking!</p>
+          <button class="btn-primary" onclick="navigate('goals', document.querySelector('[data-page=goals]'))">Create a Goal</button>
+        </div>
+      </div>
+
+      <!-- Today's logged activities -->
+      <div class="section-header" style="margin-top:32px">
+        <h2>Today's Activities</h2>
+        <span class="section-count" id="todayActCount">0 logged</span>
+      </div>
+      <div class="activity-feed" id="todayFeed">
+        <div class="feed-empty">No activities logged yet today. Go log one! 👆</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════  GOALS PAGE  ═══════════════ -->
+    <section class="page" id="page-goals">
+      <div class="section-header">
+        <h2>My Goals</h2>
+        <button class="btn-primary" onclick="openGoalModal()">+ New Goal</button>
+      </div>
+      <div class="goals-grid" id="goalsGrid">
+        <div class="empty-state-card">
+          <div class="empty-icon">🎯</div>
+          <h3>No goals yet</h3>
+          <p>Set your first goal and start tracking your progress!</p>
+          <button class="btn-primary" onclick="openGoalModal()">Create First Goal</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════  LOG ACTIVITY PAGE  ═══════════════ -->
+    <section class="page" id="page-log">
+      <div class="log-layout">
+        <div class="log-form-card">
+          <h2>Log an Activity</h2>
+          <p class="card-sub">Record what you did toward your goals</p>
+          <form id="logForm" onsubmit="submitActivity(event)">
+            <div class="form-group">
+              <label>Which Goal? <span class="req">*</span></label>
+              <select id="logGoalId" required>
+                <option value="">— Select a goal —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Activity Description <span class="req">*</span></label>
+              <input type="text" id="logName" placeholder="e.g., Morning run, Read chapter 3..." required/>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Value <span class="req">*</span></label>
+                <input type="number" id="logValue" placeholder="e.g., 5" step="any" required/>
+              </div>
+              <div class="form-group">
+                <label>Unit</label>
+                <input type="text" id="logUnit" placeholder="km, hrs, pages..." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="logDate"/>
+            </div>
+            <div class="form-group">
+              <label>Notes (optional)</label>
+              <textarea id="logNotes" placeholder="How did it go? Any notes..." rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary full-width" id="logSubmitBtn">
+                ✓ Log Activity
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Quick log recent goals -->
+        <div class="quick-log-panel">
+          <h3>Quick Log</h3>
+          <p class="card-sub">Tap a goal to pre-fill the form</p>
+          <div id="quickGoalList" class="quick-goal-list"></div>
+
+          <div class="recent-logs">
+            <h3 style="margin-top:24px">Recent (last 5)</h3>
+            <div id="recentLogList" class="recent-log-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════  HISTORY PAGE  ═══════════════ -->
+    <section class="page" id="page-history">
+      <div class="history-toolbar">
+        <div class="filter-row">
+          <select id="histGoalFilter" onchange="renderHistory()">
+            <option value="">All Goals</option>
+          </select>
+          <input type="month" id="histMonth" onchange="renderHistory()"/>
+        </div>
+        <button class="btn-outline" onclick="exportData()">⬇️ Export Excel</button>
+      </div>
+      <div class="history-table-wrap">
+        <table class="history-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Goal</th>
+              <th>Activity</th>
+              <th>Value</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="6" class="empty-td">No history yet. Start logging activities!</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════  ANALYTICS PAGE  ═══════════════ -->
+    <section class="page" id="page-analytics">
+      <div class="analytics-layout">
+        <!-- Weekly activity bar chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3>Weekly Activity</h3><span class="badge">Last 14 days</span>
+          </div>
+          <div class="chart-area"><canvas id="weeklyChart"></canvas></div>
+        </div>
+        <!-- Goal progress donut -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h3>Today's Goal Progress</h3><span class="badge">vs Target</span>
+          </div>
+          <div class="chart-area"><canvas id="progressChart"></canvas></div>
+        </div>
+        <!-- Per-goal line chart -->
+        <div class="chart-card wide">
+          <div class="chart-card-header">
+            <h3>Activity Trend by Goal</h3>
+            <select id="trendGoalSelect" onchange="renderTrendChart()">
+              <option value="">All Goals</option>
+            </select>
+          </div>
+          <div class="chart-area"><canvas id="trendChart"></canvas></div>
+        </div>
+        <!-- Stats grid -->
+        <div class="chart-card">
+          <h3 style="margin-bottom:16px">All-Time Stats</h3>
+          <div class="stats-grid" id="allTimeStats"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════  ABOUT ME / PROFILE PAGE  ═══════════════ -->
+    <section class="page" id="page-profile">
+      <!-- Profile Hero Banner -->
+      <div class="profile-hero-card">
+        <div class="profile-hero-content">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar" id="profAvatar">👨‍💻</div>
+            <button class="profile-avatar-btn" onclick="openProfileModal()" title="Change avatar">📷</button>
+          </div>
+          <div class="profile-hero-details">
+            <div class="profile-title-row">
+              <h1 class="profile-hero-name" id="profName">Uday Pundir</h1>
+              <span class="status-badge live-status"><span class="pulse-dot"></span>Active Learner</span>
+            </div>
+            <p class="profile-hero-headline" id="profTitle">Student & Software Developer</p>
+            <div class="profile-meta-tags">
+              <span class="pm-tag"><span class="pm-icon">🎓</span><span id="profMetaDegree">B.Tech in Computer Science</span></span>
+              <span class="pm-tag"><span class="pm-icon">🏛️</span><span id="profMetaUniv">Your College / University</span></span>
+              <span class="pm-tag"><span class="pm-icon">📅</span><span id="profMetaYear">Class of 2026</span></span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary profile-edit-btn" onclick="openProfileModal()">
+          <span>✏️</span> Edit Profile
+        </button>
+      </div>
+
+      <!-- Main Profile Grid -->
+      <div class="profile-grid">
+        <!-- Education & Pursuits Card -->
+        <div class="profile-card">
+          <div class="pcard-header">
+            <div class="pcard-icon">🎓</div>
+            <div>
+              <h3>Education & Academics</h3>
+              <p class="card-sub">What I'm pursuing & where I'm studying</p>
+            </div>
+          </div>
+          <div class="pcard-body info-list">
+            <div class="info-item">
+              <div class="info-label">Where I am Studying</div>
+              <div class="info-val strong" id="profUniversity">Your College / University</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">What I am Pursuing</div>
+              <div class="info-val strong" id="profDegree">B.Tech in Computer Science & Engineering</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Current Academic Stage</div>
+              <div class="info-val" id="profYear">3rd Year (Class of 2026)</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Primary Interests</div>
+              <div class="info-val" id="profInterests">Software Engineering, Web Development, Problem Solving</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social & Online Profiles Card -->
+        <div class="profile-card">
+          <div class="pcard-header">
+            <div class="pcard-icon">🌐</div>
+            <div>
+              <h3>Profiles & Social Links</h3>
+              <p class="card-sub">Connect and explore my work</p>
+            </div>
+          </div>
+          <div class="pcard-body links-list">
+            <!-- GitHub -->
+            <a class="social-link-card github" id="profGithubLink" href="https://github.com/udaypundir" target="_blank" rel="noopener">
+              <div class="social-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              </div>
+              <div class="social-info">
+                <span class="social-name">GitHub</span>
+                <span class="social-handle" id="profGithubHandle">github.com/udaypundir</span>
+              </div>
+              <span class="social-external">↗</span>
+            </a>
+
+            <!-- LinkedIn -->
+            <a class="social-link-card linkedin" id="profLinkedinLink" href="https://www.linkedin.com/in/uday-pundir" target="_blank" rel="noopener">
+              <div class="social-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              </div>
+              <div class="social-info">
+                <span class="social-name">LinkedIn</span>
+                <span class="social-handle" id="profLinkedinHandle">linkedin.com/in/uday-pundir</span>
+              </div>
+              <span class="social-external">↗</span>
+            </a>
+
+            <!-- Email -->
+            <a class="social-link-card email" id="profEmailLink" href="mailto:udaypundir.work@gmail.com">
+              <div class="social-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M0 3v18h24v-18h-24zm6.623 7.929l-4.623 5.712v-9.458l4.623 3.746zm-4.141-5.929h19.035l-9.517 7.713-9.518-7.713zm5.694 7.188l3.824 3.099 3.83-3.104 5.612 6.817h-18.779l5.513-6.812zm9.208-1.257l4.616-3.74v9.346l-4.616-5.606z"/></svg>
+              </div>
+              <div class="social-info">
+                <span class="social-name">Email</span>
+                <span class="social-handle" id="profEmailHandle">udaypundir.work@gmail.com</span>
+              </div>
+              <span class="social-external">✉</span>
+            </a>
+
+            <!-- Portfolio / Website -->
+            <a class="social-link-card portfolio" id="profPortfolioLink" href="#" target="_blank" rel="noopener" style="display:none">
+              <div class="social-icon">🌐</div>
+              <div class="social-info">
+                <span class="social-name">Portfolio Website</span>
+                <span class="social-handle" id="profPortfolioHandle">Visit Website</span>
+              </div>
+              <span class="social-external">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Skills & Stack Card -->
+        <div class="profile-card">
+          <div class="pcard-header">
+            <div class="pcard-icon">⚡</div>
+            <div>
+              <h3>Skills & Technologies</h3>
+              <p class="card-sub">Tools, languages & competencies</p>
+            </div>
+          </div>
+          <div class="pcard-body">
+            <div class="skills-pill-wrap" id="profSkillsPills">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio & Philosophy Card -->
+        <div class="profile-card">
+          <div class="pcard-header">
+            <div class="pcard-icon">📝</div>
+            <div>
+              <h3>About Me & Bio</h3>
+              <p class="card-sub">Personal background and philosophy</p>
+            </div>
+          </div>
+          <div class="pcard-body">
+            <blockquote class="profile-bio-quote" id="profBio">
+              Passionate about programming, solving complex algorithms, and building interactive web projects. Constantly learning and striving for daily discipline.
+            </blockquote>
+            <div class="profile-quick-stats">
+              <div class="pqs-item">
+                <span class="pqs-val" id="profStatGoals">0</span>
+                <span class="pqs-lbl">Active Goals</span>
+              </div>
+              <div class="pqs-item">
+                <span class="pqs-val" id="profStatActs">0</span>
+                <span class="pqs-lbl">Total Logs</span>
+              </div>
+              <div class="pqs-item">
+                <span class="pqs-val" id="profStatStreak">0</span>
+                <span class="pqs-lbl">Day Streak 🔥</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══════ GOAL MODAL ══════ -->
+  <div class="modal-backdrop" id="goalModalBackdrop" onclick="closeGoalModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="goalModalTitle">Create New Goal</h3>
+        <button class="modal-close" onclick="closeGoalModal()">✕</button>
+      </div>
+      <form id="goalForm" onsubmit="submitGoal(event)">
+        <div class="form-group">
+          <label>Goal Name <span class="req">*</span></label>
+          <input type="text" id="gName" placeholder="e.g., Run 5km daily, Read 30 pages..." required/>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="gDesc" placeholder="What does achieving this mean to you?"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category <span class="req">*</span></label>
+            <input type="text" id="gCategory" placeholder="Fitness, Study, Health..." required/>
+          </div>
+          <div class="form-group">
+            <label>Icon (emoji)</label>
+            <input type="text" id="gIcon" placeholder="🎯" maxlength="4"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Daily Target <span class="req">*</span></label>
+            <input type="number" id="gTarget" placeholder="e.g., 10" step="any" required/>
+          </div>
+          <div class="form-group">
+            <label>Unit <span class="req">*</span></label>
+            <input type="text" id="gUnit" placeholder="km, hrs, pages, reps..." required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Deadline (optional)</label>
+          <input type="date" id="gDeadline"/>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <div class="color-picker-row" id="colorPicker">
+            <button type="button" class="color-dot active" style="background:#8b5cf6" data-color="#8b5cf6" onclick="selectColor(this)"></button>
+            <button type="button" class="color-dot" style="background:#06b6d4" data-color="#06b6d4" onclick="selectColor(this)"></button>
+            <button type="button" class="color-dot" style="background:#10b981" data-color="#10b981" onclick="selectColor(this)"></button>
+            <button type="button" class="color-dot" style="background:#f59e0b" data-color="#f59e0b" onclick="selectColor(this)"></button>
+            <button type="button" class="color-dot" style="background:#ef4444" data-color="#ef4444" onclick="selectColor(this)"></button>
+            <button type="button" class="color-dot" style="background:#ec4899" data-color="#ec4899" onclick="selectColor(this)"></button>
+          </div>
+        </div>
+        <input type="hidden" id="gColor" value="#8b5cf6"/>
+        <input type="hidden" id="gEditId" value=""/>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary full-width" id="goalSubmitBtn">Create Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ PROFILE MODAL ══════ -->
+  <div class="modal-backdrop" id="profileModalBackdrop" onclick="closeProfileModal()">
+    <div class="modal modal-lg" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Edit Personal Profile</h3>
+        <button class="modal-close" onclick="closeProfileModal()">✕</button>
+      </div>
+      <form id="profileForm" onsubmit="submitProfile(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Your Full Name <span class="req">*</span></label>
+            <input type="text" id="pFormName" placeholder="e.g. Uday Pundir" required/>
+          </div>
+          <div class="form-group">
+            <label>Headline / Tagline</label>
+            <input type="text" id="pFormTitle" placeholder="e.g. Student & Software Developer"/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Where Are You Studying? (College/University) <span class="req">*</span></label>
+            <input type="text" id="pFormUniv" placeholder="e.g. ABC Institute of Technology" required/>
+          </div>
+          <div class="form-group">
+            <label>What Are You Pursuing? (Degree/Course) <span class="req">*</span></label>
+            <input type="text" id="pFormDegree" placeholder="e.g. B.Tech in Computer Science" required/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Academic Year / Batch</label>
+            <input type="text" id="pFormYear" placeholder="e.g. 3rd Year (Class of 2026)"/>
+          </div>
+          <div class="form-group">
+            <label>Avatar Icon</label>
+            <div class="avatar-select-row" id="avatarPicker">
+              <button type="button" class="avatar-opt" onclick="selectAvatar('👨‍💻')">👨‍💻</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('🚀')">🚀</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('⚡')">⚡</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('🎯')">🎯</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('💻')">💻</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('🎓')">🎓</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('🧠')">🧠</button>
+              <button type="button" class="avatar-opt" onclick="selectAvatar('🔥')">🔥</button>
+            </div>
+            <input type="hidden" id="pFormAvatar" value="👨‍💻"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Bio / About Me</label>
+          <textarea id="pFormBio" rows="3" placeholder="A short bio about yourself, your goals, and what drives you..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Skills & Tech Stack (comma separated)</label>
+          <input type="text" id="pFormSkills" placeholder="Python, JavaScript, Data Structures, Web Development, Git"/>
+        </div>
+
+        <div class="modal-section-title">Profiles & Social Links</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>GitHub Profile URL</label>
+            <input type="url" id="pFormGithub" placeholder="https://github.com/your-username"/>
+          </div>
+          <div class="form-group">
+            <label>LinkedIn Profile URL</label>
+            <input type="url" id="pFormLinkedin" placeholder="https://linkedin.com/in/your-profile"/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="pFormEmail" placeholder="youremail@example.com"/>
+          </div>
+          <div class="form-group">
+            <label>Portfolio / Other Link</label>
+            <input type="url" id="pFormPortfolio" placeholder="https://yourportfolio.com"/>
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top:20px;">
+          <button type="button" class="btn-ghost" onclick="closeProfileModal()">Cancel</button>
+          <button type="submit" class="btn-primary" id="profileSubmitBtn" style="min-width:140px;">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
